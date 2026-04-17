@@ -12,7 +12,9 @@ body {
     justify-content: center;
     align-items: center;
     position: relative;
-    overflow: hidden;
+    /* ⬇️ ИЗМЕНЕНО: разрешаем вертикальную прокрутку */
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 /* Canvas для сердечек */
@@ -39,6 +41,7 @@ body {
     background: rgba(20, 5, 30, 0.35);
     border-radius: 48px;
     padding: 30px 25px 40px;
+    margin: 20px auto; /* небольшой отступ сверху/снизу для скролла */
     box-shadow: 0 0 40px rgba(255, 20, 140, 0.3),
                 0 0 120px rgba(180, 0, 200, 0.2),
                 inset 0 0 20px rgba(255, 192, 203, 0.2);
@@ -92,6 +95,7 @@ body {
     background: rgba(30, 8, 40, 0.6);
     backdrop-filter: blur(12px);
     width: 100%;
+    /* ⬇️ Убираем фиксированную высоту, позволяем контенту определять размер */
     min-height: 280px;
     border-radius: 32px;
     padding: 28px 25px;
@@ -104,26 +108,6 @@ body {
     word-break: break-word;
     transition: all 0.25s ease;
     text-shadow: 0 0 5px hotpink;
-
-    /* ⬇️ ДОБАВЛЕНО: прокрутка длинных писем */
-    max-height: 60vh;
-    overflow-y: auto;
-}
-
-/* ⬇️ ДОБАВЛЕНО: стилизация скроллбара */
-.letter-window::-webkit-scrollbar {
-    width: 6px;
-}
-
-.letter-window::-webkit-scrollbar-track {
-    background: rgba(255, 192, 203, 0.1);
-    border-radius: 10px;
-}
-
-.letter-window::-webkit-scrollbar-thumb {
-    background: #ff69b4;
-    border-radius: 10px;
-    box-shadow: inset 0 0 6px #ff1493;
 }
 
 .letter-date {
@@ -321,7 +305,7 @@ body {
 }
 
 /* Адаптив */
-@media (max-ширина: 600px) {
+@media (max-width: 600px) {
     .app {
         padding: 20px 15px;
     }
@@ -331,7 +315,6 @@ body {
     .letter-window {
         padding: 18px;
         font-size: 1.1rem;
-      /*  height: 240px;   /* ← ИЗМЕНИТЕ ЭТУ СТРОКУ */
     }
     .arrow-btn {
         width: 55px;
