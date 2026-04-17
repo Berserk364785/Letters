@@ -104,6 +104,18 @@ body {
     word-break: break-word;
     transition: all 0.25s ease;
     text-shadow: 0 0 5px hotpink;
+.letter-window::-webkit-scrollbar {
+    width: 6px;
+}
+.letter-window::-webkit-scrollbar-track {
+    background: rgba(255,192,203,0.1);
+    border-radius: 10px;
+}
+.letter-window::-webkit-scrollbar-thumb {
+    background: #ff69b4;
+    border-radius: 10px;
+    box-shadow: inset 0 0 6px #ff1493;
+}
 }
 
 .letter-date {
