@@ -331,7 +331,7 @@ body {
     .letter-window {
         padding: 18px;
         font-size: 1.1rem;
-        height: 300px;   /* ← ИЗМЕНИТЕ ЭТУ СТРОКУ */
+        height: 240px;   /* ← ИЗМЕНИТЕ ЭТУ СТРОКУ */
     }
     .arrow-btn {
         width: 55px;
