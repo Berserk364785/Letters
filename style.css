@@ -1,0 +1,320 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    background: radial-gradient(circle at 20% 30%, #1a0a1f, #0b0410);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Canvas для сердечек */
+#hearts-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Основной контейнер */
+.app {
+    position: relative;
+    z-index: 10;
+    width: 90%;
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    backdrop-filter: blur(8px);
+    background: rgba(20, 5, 30, 0.35);
+    border-radius: 48px;
+    padding: 30px 25px 40px;
+    box-shadow: 0 0 40px rgba(255, 20, 140, 0.3),
+                0 0 120px rgba(180, 0, 200, 0.2),
+                inset 0 0 20px rgba(255, 192, 203, 0.2);
+    border: 1.5px solid rgba(255, 105, 180, 0.6);
+    transition: box-shadow 0.3s;
+}
+
+/* Таймер */
+.neon-timer {
+    font-size: 3.2rem;
+    font-weight: 700;
+    letter-spacing: 6px;
+    text-shadow: 0 0 10px #ff99cc,
+                 0 0 20px #ff66b2,
+                 0 0 40px #ff3399,
+                 0 0 80px #cc0066;
+    color: #ffe6f2;
+    margin-bottom: 15px;
+    text-align: center;
+    word-break: break-word;
+    background: rgba(0, 0, 0, 0.15);
+    padding: 10px 30px;
+    border-radius: 60px;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 192, 203, 0.5);
+    box-shadow: inset 0 0 15px #ff4da6, 0 0 30px #ff1a8c;
+    font-family: 'Courier New', monospace;
+}
+
+.date-small {
+    font-size: 1.2rem;
+    letter-spacing: 3px;
+    opacity: 0.9;
+    text-shadow: 0 0 8px hotpink;
+    margin-top: -5px;
+    margin-bottom: 15px;
+    color: #ffd9e6;
+}
+
+/* Окно письма */
+.letter-container {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 10px 0 20px;
+}
+
+.letter-window {
+    background: rgba(30, 8, 40, 0.6);
+    backdrop-filter: blur(12px);
+    width: 100%;
+    min-height: 280px;
+    border-radius: 32px;
+    padding: 28px 25px;
+    border: 2px solid #ff80bf;
+    box-shadow: 0 0 30px #ff4da6, inset 0 0 20px #ffb3d9;
+    color: #fff0f5;
+    font-size: 1.3rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+    transition: all 0.25s ease;
+    text-shadow: 0 0 5px hotpink;
+}
+
+.letter-date {
+    font-size: 0.9rem;
+    color: #ffb3d9;
+    margin-bottom: 15px;
+    text-align: right;
+    border-bottom: 1px dashed #ff66b2;
+    padding-bottom: 8px;
+    text-shadow: 0 0 6px #ff1a8c;
+    letter-spacing: 1px;
+}
+
+.letter-content {
+    font-size: 1.2rem;
+}
+
+/* Стрелки */
+.nav-arrows {
+    display: flex;
+    gap: 25px;
+    margin-top: 5px;
+}
+
+.arrow-btn {
+    background: rgba(255, 192, 203, 0.15);
+    border: 2px solid #ff69b4;
+    color: #ffb6c1;
+    font-size: 2.8rem;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 20px #ff1493, inset 0 0 8px #ffb6c1;
+    transition: 0.2s;
+    user-select: none;
+    font-weight: bold;
+    text-shadow: 0 0 12px fuchsia;
+}
+
+.arrow-btn:hover {
+    background: rgba(255, 20, 147, 0.3);
+    box-shadow: 0 0 35px #ff69b4, inset 0 0 15px white;
+    color: white;
+    transform: scale(1.05);
+    border-color: #ff99cc;
+}
+
+.arrow-btn:active {
+    transform: scale(0.95);
+}
+
+.arrow-btn.disabled {
+    opacity: 0.3;
+    pointer-events: none;
+    box-shadow: none;
+}
+
+.letter-counter {
+    margin-top: 10px;
+    font-size: 1rem;
+    color: #ffb3d9;
+    text-shadow: 0 0 8px deeppink;
+}
+
+/* Админ-кнопка */
+.admin-corner {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    z-index: 100;
+}
+
+.admin-btn {
+    background: rgba(50, 5, 40, 0.5);
+    backdrop-filter: blur(8px);
+    border: 1.5px solid #ff80bf;
+    color: #ffccdf;
+    padding: 12px 18px;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: bold;
+    box-shadow: 0 0 20px #ff3399;
+    cursor: pointer;
+    transition: 0.2s;
+    text-shadow: 0 0 6px hotpink;
+    letter-spacing: 1px;
+}
+
+.admin-btn:hover {
+    background: #ff14934d;
+    box-shadow: 0 0 35px #ff1a8c;
+    color: white;
+    border-color: #ffb3d9;
+}
+
+/* Модальное окно */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+}
+
+.modal-card {
+    background: #1f0a1f;
+    border: 3px solid #ff4da6;
+    border-radius: 40px;
+    padding: 30px 25px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 0 80px #ff1493, inset 0 0 20px #ffb3d9;
+    color: #ffe6f2;
+}
+
+.modal-card h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    text-shadow: 0 0 15px deeppink;
+    font-weight: 500;
+}
+
+.modal-input {
+    width: 100%;
+    padding: 16px;
+    border-radius: 30px;
+    border: 2px solid #ff69b4;
+    background: #2e0a2e;
+    color: white;
+    font-size: 1rem;
+    margin-bottom: 18px;
+    resize: vertical;
+    box-shadow: inset 0 0 15px #b3006b;
+}
+
+.modal-input::placeholder {
+    color: #ffb3d9;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+}
+
+.modal-btn {
+    background: transparent;
+    border: 2px solid #ff80bf;
+    color: #ffccdf;
+    padding: 10px 20px;
+    border-radius: 40px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 0 12px hotpink;
+    transition: 0.2s;
+}
+
+.modal-btn.primary {
+    background: #ff1a8c40;
+    border-color: #ff4da6;
+    box-shadow: 0 0 25px #ff1493;
+}
+
+.modal-btn:hover {
+    background: #ff149370;
+    color: white;
+}
+
+.reset-link {
+    margin-top: 10px;
+    text-align: right;
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.reset-link a {
+    color: #ffb3d9;
+}
+
+.modal-hint {
+    margin-top: 15px;
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+/* Адаптив */
+@media (max-width: 600px) {
+    .app {
+        padding: 20px 15px;
+    }
+    .neon-timer {
+        font-size: 2.4rem;
+    }
+    .letter-window {
+        padding: 18px;
+        font-size: 1.1rem;
+    }
+    .arrow-btn {
+        width: 55px;
+        height: 55px;
+        font-size: 2.2rem;
+    }
+}

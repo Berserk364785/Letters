@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Неоновые письма 💌</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Canvas для летающих сердечек -->
+    <canvas id="hearts-canvas"></canvas>
+
+    <!-- Кнопка вызова админ-панели -->
+    <div class="admin-corner">
+        <button class="admin-btn" id="showAdminModal">✨ Админ ✨</button>
+    </div>
+
+    <!-- Модальное окно добавления письма -->
+    <div class="modal" id="adminModal">
+        <div class="modal-card">
+            <h2>💖 Новое письмо 💖</h2>
+            <textarea id="newLetterContent" class="modal-input" rows="5" placeholder="Текст письма..."></textarea>
+            <input type="date" id="newLetterDate" class="modal-input">
+            <div class="modal-actions">
+                <button class="modal-btn" id="cancelModal">Отмена</button>
+                <button class="modal-btn primary" id="saveLetter">Сохранить</button>
+            </div>
+            <div class="reset-link">
+                <a href="#" id="resetToDemo">(сбросить до демо-писем)</a>
+            </div>
+            <p class="modal-hint">⭐ Админ: письма сохраняются в браузере</p>
+        </div>
+    </div>
+
+    <!-- Основной интерфейс -->
+    <div class="app">
+        <div class="neon-timer" id="liveTimer">--:--:--</div>
+        <div class="date-small" id="liveDate">---</div>
+
+        <div class="letter-container">
+            <div class="letter-window" id="letterDisplay">
+                <div class="letter-date" id="letterDate"></div>
+                <div class="letter-content" id="letterText">Загрузка писем...</div>
+            </div>
+        </div>
+
+        <div class="nav-arrows">
+            <div class="arrow-btn" id="prevLetter">←</div>
+            <div class="arrow-btn" id="nextLetter">→</div>
+        </div>
+        <div class="letter-counter" id="letterCounter">📩 0 писем</div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
