@@ -1,92 +1,97 @@
 (function() {
     "use strict";
 
-    // ---------- ЛЕТАЮЩИЕ СЕРДЕЧКИ ----------
-    const canvas = document.getElementById('hearts-canvas');
-    const ctx = canvas.getContext('2d');
-    let width, height;
-    let hearts = [];
-    const HEART_COUNT = 50;
+    // ---------- ЛЕТАЮЩИЕ СЕРДЕЧКИ (ЭМОДЗИ) ----------
+    const HEARTS_CONTAINER = document.createElement('div');
+    HEARTS_CONTAINER.style.position = 'fixed';
+    HEARTS_CONTAINER.style.top = '0';
+    HEARTS_CONTAINER.style.left = '0';
+    HEARTS_CONTAINER.style.width = '100%';
+    HEARTS_CONTAINER.style.height = '100%';
+    HEARTS_CONTAINER.style.pointerEvents = 'none';
+    HEARTS_CONTAINER.style.zIndex = '1';
+    document.body.appendChild(HEARTS_CONTAINER);
 
-    function resizeCanvas() {
-        width = window.innerWidth;
-        height = window.innerHeight;
-        canvas.width = width;
-        canvas.height = height;
-    }
+    const HEART_COUNT = 40;
+    let hearts = [];
+    let width = window.innerWidth;
+    let height = window.innerHeight;
 
     function random(min, max) {
         return Math.random() * (max - min) + min;
     }
 
-    function createHeart() {
-        return {
-            x: random(0, width),
-            y: random(-height * 0.2, height * 1.2),
-            size: random(12, 36),
-            speedY: random(0.4, 1.8),
-            speedX: random(-0.3, 0.3),
-            opacity: random(0.3, 0.9),
-            color: `rgba(255, ${random(80, 200)}, ${random(150, 220)}, `,
-            phase: random(0, 100)
-        };
+    function createHeartElement() {
+        const el = document.createElement('div');
+        el.textContent = '❤️';
+        el.style.position = 'absolute';
+        el.style.fontSize = random(16, 36) + 'px';
+        el.style.opacity = random(0.3, 0.8);
+        el.style.textShadow = '0 0 10px #ff69b4, 0 0 20px #ff1493';
+        el.style.willChange = 'transform, opacity';
+        return el;
+    }
+
+    class FlyingHeart {
+        constructor() {
+            this.el = createHeartElement();
+            this.size = parseFloat(this.el.style.fontSize);
+            this.x = random(0, width);
+            this.y = random(-height * 0.2, height * 1.2);
+            this.speedY = random(0.4, 1.5);
+            this.speedX = random(-0.3, 0.3);
+            this.opacity = parseFloat(this.el.style.opacity);
+            this.phase = random(0, 100);
+            this.updatePosition();
+            HEARTS_CONTAINER.appendChild(this.el);
+        }
+
+        updatePosition() {
+            this.el.style.transform = `translate(${this.x}px, ${this.y}px)`;
+            this.el.style.opacity = this.opacity;
+        }
+
+        update() {
+            this.y += this.speedY;
+            this.x += this.speedX + Math.sin(Date.now() * 0.001 + this.phase) * 0.1;
+            this.opacity = 0.4 + 0.5 * Math.sin(Date.now() * 0.003 + this.phase);
+            
+            if (this.y > height + 50) {
+                this.y = -30;
+                this.x = random(0, width);
+            }
+            if (this.x < -30) this.x = width + 20;
+            if (this.x > width + 30) this.x = -20;
+            
+            this.updatePosition();
+        }
+
+        remove() {
+            this.el.remove();
+        }
     }
 
     function initHearts() {
+        hearts.forEach(h => h.remove());
         hearts = [];
         for (let i = 0; i < HEART_COUNT; i++) {
-            hearts.push(createHeart());
+            hearts.push(new FlyingHeart());
         }
-    }
-
-    function drawHeart(ctx, x, y, size, opacity, colorBase) {
-    ctx.save();
-    ctx.translate(x, y);
-    // Масштаб: за основу взято сердце размером ~24px
-    const scale = size / 24;
-    ctx.scale(scale, scale);
-    
-    ctx.fillStyle = colorBase + opacity + ')';
-    ctx.shadowColor = '#ff69b4';
-    ctx.shadowBlur = 20 * scale; // тень тоже масштабируем
-    
-    ctx.beginPath();
-    ctx.moveTo(0, 4);
-    ctx.bezierCurveTo(-4, 0, -12, -8, 0, -14);
-    ctx.bezierCurveTo(12, -8, 4, 0, 0, 4);
-    ctx.fill();
-    
-    ctx.restore();
-    }
-
-    function updateHearts() {
-        for (let h of hearts) {
-            h.y += h.speedY;
-            h.x += h.speedX + Math.sin(Date.now() * 0.001 + h.phase) * 0.1;
-            h.opacity = 0.4 + 0.5 * Math.sin(Date.now() * 0.003 + h.phase);
-            if (h.y > height + 50) { h.y = -30; h.x = random(0, width); }
-            if (h.x < -30) h.x = width + 20;
-            if (h.x > width + 30) h.x = -20;
-        }
-    }
-
-    function drawHearts() {
-        ctx.clearRect(0, 0, width, height);
-        for (let h of hearts) drawHeart(ctx, h.x, h.y, h.size, h.opacity, h.color);
     }
 
     function animateHearts() {
-        updateHearts();
-        drawHearts();
+        for (let h of hearts) h.update();
         requestAnimationFrame(animateHearts);
     }
 
     window.addEventListener('resize', () => {
-        resizeCanvas();
+        width = window.innerWidth;
+        height = window.innerHeight;
         initHearts();
     });
 
-    resizeCanvas();
+    width = window.innerWidth;
+    height = window.innerHeight;
     initHearts();
     animateHearts();
 
@@ -106,7 +111,6 @@
     let lettersList = [];
     let currentIndex = 0;
 
-    // Функция получения локальной даты в формате YYYY-MM-DD
     function getLocalDateStr(date = new Date()) {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -134,7 +138,6 @@
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        // Проверяем последние 90 дней
         for (let i = 0; i <= 90; i++) {
             const d = new Date(today);
             d.setDate(today.getDate() - i);
@@ -143,11 +146,8 @@
             if (letter) letters.push(letter);
         }
 
-        // Убираем дубликаты и сортируем
         const unique = Array.from(new Map(letters.map(l => [l.date, l])).values());
         unique.sort((a, b) => a.date.localeCompare(b.date));
-
-        // Фильтруем: только даты ≤ сегодня
         const available = unique.filter(l => l.date <= todayStr);
         console.log('📚 Доступные письма (≤ сегодня):', available);
         return available;
@@ -182,7 +182,7 @@
         }
 
         const letter = lettersList[currentIndex];
-        const d = new Date(letter.date + 'T12:00:00'); // чтобы избежать сдвига UTC
+        const d = new Date(letter.date + 'T12:00:00');
         const formatted = d.toLocaleDateString('ru-RU', { year:'numeric', month:'long', day:'numeric' });
         dateEl.textContent = `📅 ${formatted}`;
         textEl.textContent = letter.content;
