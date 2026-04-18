@@ -102,13 +102,16 @@
     updateTimer();
     setInterval(updateTimer, 1000);
 
-    // ---------- РАБОТА С ПИСЬМАМИ (ТОЛЬКО ≤ СЕГОДНЯ) ----------
+    // ---------- РАБОТА С ПИСЬМАМИ (ДОСТУПНЫ ДАТЫ ≤ ЗАВТРА) ----------
     const LETTERS_DIR = './letters/';
     let lettersList = [];
     let currentIndex = 0;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().slice(0,10);
     const todayStr = today.toISOString().slice(0,10);
 
     // Загрузить одно письмо по дате
@@ -123,7 +126,7 @@
         }
     }
 
-    // Загрузить все письма с датой ≤ сегодня (проверяем последние 90 дней)
+    // Загрузить все письма с датой ≤ завтра (проверяем последние 90 дней)
     async function loadAllAvailableLetters() {
         const letters = [];
         for (let i = 0; i < 90; i++) {
@@ -133,10 +136,15 @@
             const letter = await loadLetterForDate(dateStr);
             if (letter) letters.push(letter);
         }
-        // Сортируем от старых к новым
-        letters.sort((a, b) => a.date.localeCompare(b.date));
-        console.log('📚 Доступные письма (≤ сегодня):', letters);
-        return letters;
+        // Также проверяем завтрашний день (если файл есть, он будет доступен)
+        const tomorrowLetter = await loadLetterForDate(tomorrowStr);
+        if (tomorrowLetter) letters.push(tomorrowLetter);
+
+        // Убираем возможные дубликаты и сортируем по возрастанию даты
+        const unique = Array.from(new Map(letters.map(l => [l.date, l])).values());
+        unique.sort((a, b) => a.date.localeCompare(b.date));
+        console.log('📚 Доступные письма (≤ завтра):', unique);
+        return unique;
     }
 
     // Инициализация
