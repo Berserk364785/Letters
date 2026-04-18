@@ -102,54 +102,40 @@
     updateTimer();
     setInterval(updateTimer, 1000);
 
-    // ---------- РАБОТА С ПИСЬМАМИ (ДОСТУПНЫ ДАТЫ ≤ ЗАВТРА) ----------
-    const LETTERS_DIR = './letters/';
+    // ---------- РАБОТА С ПИСЬМАМИ (JSON-файл) ----------
+    const LETTERS_JSON_URL = './letters.json';
     let lettersList = [];
     let currentIndex = 0;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().slice(0,10);
     const todayStr = today.toISOString().slice(0,10);
 
-    // Загрузить одно письмо по дате
-    async function loadLetterForDate(dateStr) {
+    // Загрузить все письма из JSON и отфильтровать (дата ≤ сегодня)
+    async function loadLetters() {
         try {
-            const response = await fetch(`${LETTERS_DIR}${dateStr}.txt`);
-            if (!response.ok) return null;
-            const content = await response.text();
-            return { date: dateStr, content: content.trim() };
-        } catch (e) {
-            return null;
+            const response = await fetch(LETTERS_JSON_URL);
+            if (!response.ok) throw new Error('JSON не найден');
+            const data = await response.json();
+            
+            // Преобразуем объект в массив и фильтруем будущие даты
+            const all = Object.entries(data).map(([date, content]) => ({ date, content }));
+            const available = all.filter(item => item.date <= todayStr);
+            
+            // Сортируем по дате
+            available.sort((a, b) => a.date.localeCompare(b.date));
+            
+            console.log('📚 Доступные письма (≤ сегодня):', available);
+            return available;
+        } catch (error) {
+            console.error('❌ Ошибка загрузки писем:', error);
+            return [];
         }
-    }
-
-    // Загрузить все письма с датой ≤ завтра (проверяем последние 90 дней)
-    async function loadAllAvailableLetters() {
-        const letters = [];
-        for (let i = 0; i < 90; i++) {
-            const d = new Date(today);
-            d.setDate(today.getDate() - i);
-            const dateStr = d.toISOString().slice(0,10);
-            const letter = await loadLetterForDate(dateStr);
-            if (letter) letters.push(letter);
-        }
-        // Также проверяем завтрашний день (если файл есть, он будет доступен)
-        const tomorrowLetter = await loadLetterForDate(tomorrowStr);
-        if (tomorrowLetter) letters.push(tomorrowLetter);
-
-        // Убираем возможные дубликаты и сортируем по возрастанию даты
-        const unique = Array.from(new Map(letters.map(l => [l.date, l])).values());
-        unique.sort((a, b) => a.date.localeCompare(b.date));
-        console.log('📚 Доступные письма (≤ завтра):', unique);
-        return unique;
     }
 
     // Инициализация
     async function initializeLetters() {
-        lettersList = await loadAllAvailableLetters();
+        lettersList = await loadLetters();
 
         if (lettersList.length === 0) {
             currentIndex = -1;
@@ -159,7 +145,7 @@
             if (todayIndex !== -1) {
                 currentIndex = todayIndex;
             } else {
-                // Иначе показываем самое последнее (ближайшее к сегодня)
+                // Если сегодня нет — показываем самое последнее (ближайшее к сегодня)
                 currentIndex = lettersList.length - 1;
             }
         }
@@ -176,7 +162,7 @@
 
         if (lettersList.length === 0) {
             dateEl.textContent = '✨';
-            textEl.textContent = 'Писем пока нет. Добавь .txt файлы в папку letters/ ✨';
+            textEl.textContent = 'Писем пока нет. Добавь записи в letters.json ✨';
             prevBtn.classList.add('disabled');
             nextBtn.classList.add('disabled');
             return;
