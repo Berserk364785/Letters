@@ -102,13 +102,14 @@
     updateTimer();
     setInterval(updateTimer, 1000);
 
-    // ---------- РАБОТА С ПИСЬМАМИ ИЗ ПАПКИ (ТОЛЬКО ПРОШЕДШИЕ И СЕГОДНЯ) ----------
+    // ---------- РАБОТА С ПИСЬМАМИ (ТОЛЬКО ДО СЕГОДНЯ) ----------
     const LETTERS_DIR = './letters/';
     let lettersList = [];
     let currentIndex = 0;
-    const todayStr = new Date().toISOString().slice(0,10);
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().slice(0,10);
 
     // Загрузить одно письмо по дате
     async function loadLetterForDate(dateStr) {
@@ -116,7 +117,7 @@
             const response = await fetch(`${LETTERS_DIR}${dateStr}.txt`);
             if (!response.ok) return null;
             const content = await response.text();
-            console.log(`✅ Загружено письмо за ${dateStr}`);
+            console.log(`✅ Загружено: ${dateStr}`);
             return { date: dateStr, content: content.trim() };
         } catch (e) {
             console.log(`❌ Ошибка загрузки ${dateStr}: ${e.message}`);
@@ -124,20 +125,20 @@
         }
     }
 
-    // Загрузить ВСЕ доступные письма (даты ≤ сегодня)
+    // Загрузить все письма с датой ≤ сегодня
     async function loadAllAvailableLetters() {
         const letters = [];
-        // Проверяем последние 60 дней (можно увеличить)
-        for (let i = 0; i < 60; i++) {
+        // Проверяем последние 90 дней (можно увеличить)
+        for (let i = 0; i < 90; i++) {
             const d = new Date(today);
             d.setDate(today.getDate() - i);
             const dateStr = d.toISOString().slice(0,10);
             const letter = await loadLetterForDate(dateStr);
             if (letter) letters.push(letter);
         }
-        // Сортируем по возрастанию даты
+        // Сортируем от старых к новым
         letters.sort((a, b) => a.date.localeCompare(b.date));
-        console.log('📚 Все загруженные письма:', letters);
+        console.log('📚 Все загруженные письма (≤ сегодня):', letters);
         return letters;
     }
 
@@ -153,7 +154,7 @@
             if (todayIndex !== -1) {
                 currentIndex = todayIndex;
             } else {
-                // Ищем ближайшее прошедшее (последний элемент массива)
+                // Иначе показываем самое последнее (ближайшее к сегодня)
                 currentIndex = lettersList.length - 1;
             }
         }
