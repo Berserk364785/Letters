@@ -99,80 +99,86 @@
     setInterval(updateTimer, 1000);
 
     // ---------- РАБОТА С ПИСЬМАМИ ИЗ ПАПКИ ----------
-    // ---------- РАБОТА С ПИСЬМАМИ ИЗ ПАПКИ ----------
-const LETTERS_DIR = './letters/';
-let lettersList = [];
-let currentIndex = 0;
-let todayStr = new Date().toISOString().slice(0,10);
+    const LETTERS_DIR = './letters/';
+    let lettersList = [];        // [{ date: '2026-04-17', content: '...' }]
+    let currentIndex = 0;
+    let todayStr = new Date().toISOString().slice(0,10);
 
-async function loadLetterForDate(dateStr) {
-    try {
-        const response = await fetch(`${LETTERS_DIR}${dateStr}.txt`);
-        if (!response.ok) return null;
-        const content = await response.text();
-        return { date: dateStr, content: content.trim() };
-    } catch (e) {
-        return null;
-    }
-}
+    // Получить список доступных писем (по именам файлов, известным заранее? 
+    // Проще всего: заранее загрузить индексный файл letters/list.json или перебирать даты)
+    // Так как мы не знаем список файлов на клиенте, сделаем так:
+    // 1. Пытаемся загрузить письмо за сегодня.
+    // 2. Если нет — пробуем вчера, позавчера... (ограничим 30 дней назад)
+    // 3. Найденное показываем, а стрелками можно листать соседние даты (пробуя загрузить).
 
-async function findLatestAvailableLetter() {
-    const today = new Date();
-    for (let i = 0; i < 30; i++) {
-        const checkDate = new Date(today);
-        checkDate.setDate(today.getDate() - i);
-        const dateStr = checkDate.toISOString().slice(0,10);
-        const letter = await loadLetterForDate(dateStr);
-        if (letter) return letter;
-    }
-    return null;
-}
-
-async function buildLetterArray(centerDateStr) {
-    const letters = [];
-    const center = new Date(centerDateStr);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    // Проверяем даты от (центр - 30 дней) до сегодня
-    for (let offset = -30; offset <= 0; offset++) {
-        const d = new Date(center);
-        d.setDate(center.getDate() + offset);
-        if (d > today) continue; // будущие даты пропускаем
-
-        const dateStr = d.toISOString().slice(0,10);
-        const letter = await loadLetterForDate(dateStr);
-        if (letter) letters.push(letter);
-    }
-
-    const unique = Array.from(new Map(letters.map(l => [l.date, l])).values());
-    unique.sort((a,b) => a.date.localeCompare(b.date));
-    return unique;
-}
-
-async function initializeLetters() {
-    let todayLetter = await loadLetterForDate(todayStr);
-    let targetDate = todayStr;
-    if (!todayLetter) {
-        const fallback = await findLatestAvailableLetter();
-        if (fallback) {
-            todayLetter = fallback;
-            targetDate = fallback.date;
+    async function loadLetterForDate(dateStr) {
+        try {
+            const response = await fetch(`${LETTERS_DIR}${dateStr}.txt`);
+            if (!response.ok) return null;
+            const content = await response.text();
+            return { date: dateStr, content: content.trim() };
+        } catch (e) {
+            return null;
         }
     }
 
-    if (todayLetter) {
-        lettersList = await buildLetterArray(targetDate);
-        currentIndex = lettersList.findIndex(l => l.date === targetDate);
-        if (currentIndex === -1) currentIndex = lettersList.length - 1; // на всякий случай
-    } else {
-        lettersList = [];
-        currentIndex = -1;
+    // Загружаем самое актуальное письмо: сегодня или ближайшее прошедшее
+    async function findLatestAvailableLetter() {
+        const today = new Date();
+        for (let i = 0; i < 30; i++) {
+            const checkDate = new Date(today);
+            checkDate.setDate(today.getDate() - i);
+            const dateStr = checkDate.toISOString().slice(0,10);
+            const letter = await loadLetterForDate(dateStr);
+            if (letter) return letter;
+        }
+        return null; // вообще ничего не найдено
     }
 
-    updateLetterDisplay();
-    updateCounter();
-}
+    // Построить массив доступных писем вокруг текущей даты (для листания)
+    async function buildLetterArray(centerDateStr) {
+        const letters = [];
+        const center = new Date(centerDateStr);
+        // Смотрим 15 дней назад и 15 вперёд
+        for (let offset = -15; offset <= 15; offset++) {
+            const d = new Date(center);
+            d.setDate(center.getDate() + offset);
+            const dateStr = d.toISOString().slice(0,10);
+            const letter = await loadLetterForDate(dateStr);
+            if (letter) letters.push(letter);
+        }
+        // Убираем дубликаты и сортируем по дате
+        const unique = Array.from(new Map(letters.map(l => [l.date, l])).values());
+        unique.sort((a,b) => a.date.localeCompare(b.date));
+        return unique;
+    }
+
+    async function initializeLetters() {
+        // Сначала пытаемся загрузить сегодняшнее
+        let todayLetter = await loadLetterForDate(todayStr);
+        let targetDate = todayStr;
+        if (!todayLetter) {
+            // Ищем ближайшее прошедшее
+            const fallback = await findLatestAvailableLetter();
+            if (fallback) {
+                todayLetter = fallback;
+                targetDate = fallback.date;
+            }
+        }
+
+        if (todayLetter) {
+            lettersList = await buildLetterArray(targetDate);
+            // Находим индекс письма с targetDate
+            currentIndex = lettersList.findIndex(l => l.date === targetDate);
+            if (currentIndex === -1) currentIndex = 0;
+        } else {
+            lettersList = [];
+            currentIndex = -1;
+        }
+
+        updateLetterDisplay();
+        updateCounter();
+    }
 
     function updateLetterDisplay() {
         const dateEl = document.getElementById('letterDate');
