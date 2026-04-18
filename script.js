@@ -40,18 +40,23 @@
     }
 
     function drawHeart(ctx, x, y, size, opacity, colorBase) {
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.scale(size / 24, size / 24);
-        ctx.fillStyle = colorBase + opacity + ')';
-        ctx.shadowColor = '#ff69b4';
-        ctx.shadowBlur = 20;
-        ctx.beginPath();
-        ctx.moveTo(0, 6);
-        ctx.bezierCurveTo(-8, -6, -16, -12, 0, -12);
-        ctx.bezierCurveTo(16, -12, 8, -6, 0, 6);
-        ctx.fill();
-        ctx.restore();
+    ctx.save();
+    ctx.translate(x, y);
+    // Масштаб: за основу взято сердце размером ~24px
+    const scale = size / 24;
+    ctx.scale(scale, scale);
+    
+    ctx.fillStyle = colorBase + opacity + ')';
+    ctx.shadowColor = '#ff69b4';
+    ctx.shadowBlur = 20 * scale; // тень тоже масштабируем
+    
+    ctx.beginPath();
+    ctx.moveTo(0, 4);
+    ctx.bezierCurveTo(-4, 0, -12, -8, 0, -14);
+    ctx.bezierCurveTo(12, -8, 4, 0, 0, 4);
+    ctx.fill();
+    
+    ctx.restore();
     }
 
     function updateHearts() {
