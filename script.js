@@ -101,11 +101,17 @@
     let lettersList = [];
     let currentIndex = 0;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString().slice(0,10);
+    // Функция получения локальной даты в формате YYYY-MM-DD
+    function getLocalDateStr(date = new Date()) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
 
-    // Загрузить один файл .txt по дате
+    const todayStr = getLocalDateStr();
+    console.log('📅 Сегодня (локально):', todayStr);
+
     async function loadLetterForDate(dateStr) {
         try {
             const response = await fetch(`${LETTERS_DIR}${dateStr}.txt`);
@@ -114,34 +120,29 @@
             console.log(`✅ Загружено письмо за ${dateStr}`);
             return { date: dateStr, content: content.trim() };
         } catch (e) {
-            console.log(`❌ Ошибка загрузки ${dateStr}: ${e.message}`);
             return null;
         }
     }
 
-    // Загрузить все доступные письма (проверяем последние 60 дней и завтра)
     async function loadAllAvailableLetters() {
         const letters = [];
-        // Проверяем даты от (сегодня - 60 дней) до (сегодня)
-        for (let i = 0; i <= 60; i++) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Проверяем последние 90 дней
+        for (let i = 0; i <= 90; i++) {
             const d = new Date(today);
             d.setDate(today.getDate() - i);
-            const dateStr = d.toISOString().slice(0,10);
+            const dateStr = getLocalDateStr(d);
             const letter = await loadLetterForDate(dateStr);
             if (letter) letters.push(letter);
         }
-        // Также проверяем завтрашний день (если уже доступен)
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
-        const tomorrowStr = tomorrow.toISOString().slice(0,10);
-        const tomorrowLetter = await loadLetterForDate(tomorrowStr);
-        if (tomorrowLetter) letters.push(tomorrowLetter);
 
-        // Убираем дубликаты и сортируем по дате (старые → новые)
+        // Убираем дубликаты и сортируем
         const unique = Array.from(new Map(letters.map(l => [l.date, l])).values());
         unique.sort((a, b) => a.date.localeCompare(b.date));
-        
-        // Фильтруем: оставляем только даты ≤ сегодня
+
+        // Фильтруем: только даты ≤ сегодня
         const available = unique.filter(l => l.date <= todayStr);
         console.log('📚 Доступные письма (≤ сегодня):', available);
         return available;
@@ -154,12 +155,7 @@
             currentIndex = -1;
         } else {
             const todayIndex = lettersList.findIndex(l => l.date === todayStr);
-            if (todayIndex !== -1) {
-                currentIndex = todayIndex;
-            } else {
-                // Если сегодня нет, показываем самое последнее (ближайшее к сегодня)
-                currentIndex = lettersList.length - 1;
-            }
+            currentIndex = todayIndex !== -1 ? todayIndex : lettersList.length - 1;
         }
 
         updateLetterDisplay();
@@ -181,7 +177,7 @@
         }
 
         const letter = lettersList[currentIndex];
-        const d = new Date(letter.date);
+        const d = new Date(letter.date + 'T12:00:00'); // чтобы избежать сдвига UTC
         const formatted = d.toLocaleDateString('ru-RU', { year:'numeric', month:'long', day:'numeric' });
         dateEl.textContent = `📅 ${formatted}`;
         textEl.textContent = letter.content;
