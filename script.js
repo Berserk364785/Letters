@@ -1,7 +1,7 @@
 (function() {
     "use strict";
 
-    // ---------- CANVAS: ЛЕТАЮЩИЕ СЕРДЕЧКИ ----------
+    // ---------- ЛЕТАЮЩИЕ СЕРДЕЧКИ ----------
     const canvas = document.getElementById('hearts-canvas');
     const ctx = canvas.getContext('2d');
     let width, height;
@@ -59,11 +59,7 @@
             h.y += h.speedY;
             h.x += h.speedX + Math.sin(Date.now() * 0.001 + h.phase) * 0.1;
             h.opacity = 0.4 + 0.5 * Math.sin(Date.now() * 0.003 + h.phase);
-            
-            if (h.y > height + 50) {
-                h.y = -30;
-                h.x = random(0, width);
-            }
+            if (h.y > height + 50) { h.y = -30; h.x = random(0, width); }
             if (h.x < -30) h.x = width + 20;
             if (h.x > width + 30) h.x = -20;
         }
@@ -71,9 +67,7 @@
 
     function drawHearts() {
         ctx.clearRect(0, 0, width, height);
-        for (let h of hearts) {
-            drawHeart(ctx, h.x, h.y, h.size, h.opacity, h.color);
-        }
+        for (let h of hearts) drawHeart(ctx, h.x, h.y, h.size, h.opacity, h.color);
     }
 
     function animateHearts() {
@@ -91,7 +85,7 @@
     initHearts();
     animateHearts();
 
-    // ---------- ТАЙМЕР ----------
+    // ---------- НЕОНОВЫЙ ТАЙМЕР ----------
     function updateTimer() {
         const now = new Date();
         document.getElementById('liveTimer').textContent = 
@@ -102,8 +96,8 @@
     updateTimer();
     setInterval(updateTimer, 1000);
 
-    // ---------- РАБОТА С ПИСЬМАМИ (JSON-файл) ----------
-    const LETTERS_JSON_URL = './Letters/letters.json';
+    // ---------- ЗАГРУЗКА ПИСЕМ ИЗ ПАПКИ letters/ (только ≤ сегодня) ----------
+    const LETTERS_DIR = './letters/';
     let lettersList = [];
     let currentIndex = 0;
 
@@ -111,41 +105,59 @@
     today.setHours(0, 0, 0, 0);
     const todayStr = today.toISOString().slice(0,10);
 
-    // Загрузить все письма из JSON и отфильтровать (дата ≤ сегодня)
-    async function loadLetters() {
+    // Загрузить один файл .txt по дате
+    async function loadLetterForDate(dateStr) {
         try {
-            const response = await fetch(LETTERS_JSON_URL);
-            if (!response.ok) throw new Error('JSON не найден');
-            const data = await response.json();
-            
-            // Преобразуем объект в массив и фильтруем будущие даты
-            const all = Object.entries(data).map(([date, content]) => ({ date, content }));
-            const available = all.filter(item => item.date <= todayStr);
-            
-            // Сортируем по дате
-            available.sort((a, b) => a.date.localeCompare(b.date));
-            
-            console.log('📚 Доступные письма (≤ сегодня):', available);
-            return available;
-        } catch (error) {
-            console.error('❌ Ошибка загрузки писем:', error);
-            return [];
+            const response = await fetch(`${LETTERS_DIR}${dateStr}.txt`);
+            if (!response.ok) return null;
+            const content = await response.text();
+            console.log(`✅ Загружено письмо за ${dateStr}`);
+            return { date: dateStr, content: content.trim() };
+        } catch (e) {
+            console.log(`❌ Ошибка загрузки ${dateStr}: ${e.message}`);
+            return null;
         }
     }
 
-    // Инициализация
+    // Загрузить все доступные письма (проверяем последние 60 дней и завтра)
+    async function loadAllAvailableLetters() {
+        const letters = [];
+        // Проверяем даты от (сегодня - 60 дней) до (сегодня)
+        for (let i = 0; i <= 60; i++) {
+            const d = new Date(today);
+            d.setDate(today.getDate() - i);
+            const dateStr = d.toISOString().slice(0,10);
+            const letter = await loadLetterForDate(dateStr);
+            if (letter) letters.push(letter);
+        }
+        // Также проверяем завтрашний день (если уже доступен)
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().slice(0,10);
+        const tomorrowLetter = await loadLetterForDate(tomorrowStr);
+        if (tomorrowLetter) letters.push(tomorrowLetter);
+
+        // Убираем дубликаты и сортируем по дате (старые → новые)
+        const unique = Array.from(new Map(letters.map(l => [l.date, l])).values());
+        unique.sort((a, b) => a.date.localeCompare(b.date));
+        
+        // Фильтруем: оставляем только даты ≤ сегодня
+        const available = unique.filter(l => l.date <= todayStr);
+        console.log('📚 Доступные письма (≤ сегодня):', available);
+        return available;
+    }
+
     async function initializeLetters() {
-        lettersList = await loadLetters();
+        lettersList = await loadAllAvailableLetters();
 
         if (lettersList.length === 0) {
             currentIndex = -1;
         } else {
-            // Ищем письмо за сегодня
             const todayIndex = lettersList.findIndex(l => l.date === todayStr);
             if (todayIndex !== -1) {
                 currentIndex = todayIndex;
             } else {
-                // Если сегодня нет — показываем самое последнее (ближайшее к сегодня)
+                // Если сегодня нет, показываем самое последнее (ближайшее к сегодня)
                 currentIndex = lettersList.length - 1;
             }
         }
@@ -162,7 +174,7 @@
 
         if (lettersList.length === 0) {
             dateEl.textContent = '✨';
-            textEl.textContent = 'Писем пока нет. Добавь записи в letters.json ✨';
+            textEl.textContent = 'Писем пока нет. Добавь .txt файлы в папку letters/ ✨';
             prevBtn.classList.add('disabled');
             nextBtn.classList.add('disabled');
             return;
@@ -197,15 +209,9 @@
     document.getElementById('prevLetter').addEventListener('click', () => navigate(-1));
     document.getElementById('nextLetter').addEventListener('click', () => navigate(1));
     window.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowLeft') {
-            e.preventDefault();
-            navigate(-1);
-        } else if (e.key === 'ArrowRight') {
-            e.preventDefault();
-            navigate(1);
-        }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); navigate(-1); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); navigate(1); }
     });
 
-    // Старт
     initializeLetters();
 })();
