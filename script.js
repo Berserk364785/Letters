@@ -103,7 +103,7 @@
     setInterval(updateTimer, 1000);
 
     // ---------- РАБОТА С ПИСЬМАМИ (JSON-файл) ----------
-    const LETTERS_JSON_URL = './letters.json';
+    const LETTERS_JSON_URL = './Letters/letters.json';
     let lettersList = [];
     let currentIndex = 0;
 
